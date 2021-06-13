@@ -1,0 +1,100 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: beyond-kvc
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: beyond-kvc-daemon
+  namespace: beyond-kvc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: beyond-kvc-daemon
+  namespace: beyond-kvc
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: beyond-kvc-daemon
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: beyond-kvc-daemon
+subjects:
+- kind: ServiceAccount
+  name: beyond-kvc-daemon
+  namespace: beyond-kvc
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: beyond-kvc
+  namespace: beyond-kvc
+  labels:
+    myapp: beyond-kvc
+spec:
+  selector:
+    matchLabels:
+      name: beyond-kvc
+  template:
+    metadata:
+      labels:
+        name: beyond-kvc
+    spec:
+      hostPID: true
+      # hostNetwork: true
+      serviceAccountName: beyond-kvc-daemon
+      # tolerations:
+      # - key: node-role.kubernetes.io/master
+      #   effect: NoSchedule
+      nodeSelector:
+        # Match only specific nodes requesting it:
+        #   oc label node worker-0 unsupported.example.com/beyond-kvc=""
+        unsupported.example.com/beyond-kvc: ""
+      containers:
+      - name: beyond-kvc
+        image: quay.io/wcaban/beyond-kvc:latest
+        # resources:
+        #   limits:
+        #     memory: 200Mi
+        #     cpu: 1000m
+        #   requests:
+        #     cpu: 100m
+        #     memory: 200Mi
+        securityContext:
+          privileged: true
+        command:
+          - /bin/bash
+          - -c
+          - sleep infinity
+        env:
+          - name: KMOD_NAMES
+            values: "rte_kni.ko"
+        volumeMounts:
+        - name: host-slash
+          mountPath: /host
+          readOnly: true
+      terminationGracePeriodSeconds: 30
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: FallbackToLogsOnError
+      volumes:
+      - name: host-slash
+        hostPath:
+          path: /
+    # updateStrategy:
+    #   rollingUpdate:
+    #     maxUnavailable: 1
+    #   type: RollingUpdate

@@ -1,0 +1,23 @@
+# podman build -t quay.io/wcaban/beyond-kvc:latest -f Containerfile.rhel
+FROM registry.access.redhat.com/ubi8/ubi:latest
+# Set work dir to build dir
+WORKDIR /kmod/
+
+# First update the base container to latest versions of everything
+RUN dnf update -y \
+    && rm -rf /var/cache/dnf \
+    && rm -fr /var/log/*
+
+#
+ARG KMODTGZ=http://bastion8.shift.zone:8080/kmod.tgz
+ADD ${KMODVER} ./kmod.tgz
+RUN tar xzf ./kmod.tgz --strip-components=1 
+
+ADD entrypoint.sh /kmod/
+RUN chmod +x /kmod/entrypoint.sh
+
+LABEL   io.k8s.display-name="Beyond kvc" \
+        io.k8s.description="Container with OOT kmods" \
+        io.openshift.tags="unsupported,kmod"
+
+ENTRYPOINT /bin/bash -c "sleep infinity"
