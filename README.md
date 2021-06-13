@@ -52,3 +52,8 @@ podman push quay.io/wcaban/beyond-kvc:my-kmod
             - name: KMOD_NAMES
                 values: "rte_kni.ko kmod2.ko kmod3.ko"
     ```
+
+## Running the DaemonSet
+
+- Label nodes where the DS should run `oc label node worker-0 unsupported.example.com/beyond-kvc=""`
+- Deploy DaemonSet `oc create -f 01-beyond-kvc-ds.yaml`
