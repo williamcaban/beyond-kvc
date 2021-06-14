@@ -1,0 +1,57 @@
+# podman run -ti --rm  -v ./files:/files registry.access.redhat.com/ubi8/ubi bash
+FROM registry.access.redhat.com/ubi8:latest as builder
+
+ARG KERNEL_DIR
+ENV KERNEL_DIR=$KERNEL_DIR
+
+ARG DPDK_VERSION
+ENV DPDK_VERSION=${DPDK_VERSION}
+
+###########################################################
+# Prepare base build environment
+# Can use repo rhel-8-for-x86_64-nfv-rpms
+RUN dnf install --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos \
+    --enablerepo=rhel-8-for-x86_64-baseos-rpms -y  \
+    make gcc patch cpio kmod xz elfutils-libelf-devel less tree \
+    kabi-dw kernel-abi-whitelists diffutils python3-pip; \
+    pip3 install meson; pip3 install pyelftools ; pip3 install ninja
+
+# Install kernel for build environment
+COPY files/${KERNEL_DIR} ./files/${KERNEL_DIR}
+RUN rpm -Uvh --nodeps ./files/${KERNEL_DIR}/*.rpm 
+
+###########################################################
+# Build kmod
+WORKDIR /kmod-build
+
+# File is decompressed into local directory (will end up in directory)
+# ADD ./files/driver/dpdk.tar.xz .
+
+# Using copy for better control
+COPY ./files/driver/dpdk.tar.xz ./dpdk.tar.xz
+RUN tar xf ./dpdk.tar.xz --strip-components=1 
+
+
+# make config T=x86_64-native-linuxapp-gcc
+
+RUN meson build
+RUN ninja -C build
+
+
+###########################################################
+# Build driver container
+FROM registry.access.redhat.com/ubi8:latest
+
+# ARG KERNEL_VERSION
+# ENV KERNEL_VERSION=$KERNEL_VERSION
+
+RUN dnf install --disablerepo=* --enablerepo=ubi-8-baseos --setopt=install_weak_deps=False -y kmod
+
+COPY --from=builder /kmod-build/build/kernel/linux/ /kmod/
+COPY files/scripts/entrypoint.sh /usr/local/bin/
+
+CMD ["/usr/local/bin/entrypoint.sh"]
+
+###########################################################
+# END OF FILE
+###########################################################
