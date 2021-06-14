@@ -1,6 +1,6 @@
 # Beyond KMOD
 
-`DaemonSet` for running manually compiled driver containers.
+This repository aims to create `DaemonSet` (DS) objects for running manually compiled driver containers.
 
 ## Manually building driver container
 
@@ -12,17 +12,24 @@ KMOD=name-of-kmod.ko
 /kmod/${KVER}/${KMOD}
 ```
 
-Copy all the kmods intended to be loaded with the DS to `/kmod/${KVER}/`
+Copy all the kmods intended to be loaded with the DS to `/kmod/${KVER}/`.  For example:
+
+```bash
+$ tree kmod/
+kmod
+└── 4.18.0-193.41.1.rt13.91.el8_2.x86_64
+    └── rte_kni.ko
+```
 
 ```bash
 # Create tgz containing the kmods and structure
 tar czf kmod.tgz /kmod
 
-# Put the tgz on a webserver accessible by the build process
-# and update Cotnainerfile.rhel to point to it
+# Put the tgz archive on a webserver (apache, nginx, etc) accessible by the build process
+# and update Containerfile.rhel to point to it
 ARG KMODTGZ=http://bastion8.shift.zone:8080/kmod.tgz
 
-# Build the container and upload to registry accessible by the platform
+# Build the container and push the resulting image to any container registry accessible by the platform
 podman build -t quay.io/wcaban/beyond-kvc:my-kmod -f Containerfile.rhel
 podman push quay.io/wcaban/beyond-kvc:my-kmod
 ```
@@ -42,7 +49,7 @@ podman push quay.io/wcaban/beyond-kvc:my-kmod
     ```yaml
             env:
             - name: KMOD_NAMES
-                values: "rte_kni.ko"
+                value: "rte_kni.ko"
     ```
 
     Loading multiple kmods looks like this:
@@ -55,5 +62,5 @@ podman push quay.io/wcaban/beyond-kvc:my-kmod
 
 ## Running the DaemonSet
 
-- Label nodes where the DS should run `oc label node worker-0 unsupported.example.com/beyond-kvc=""`
-- Deploy DaemonSet `oc create -f 01-beyond-kvc-ds.yaml`
+- Label nodes where the DS should run `oc label node du1-fec1 unsupported.example.com/beyond-kvc=''`
+- Deploy the DaemonSet with `oc create -f 01-beyond-kvc-ds.yaml`
