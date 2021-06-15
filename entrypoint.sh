@@ -54,6 +54,7 @@ load_kmods() {
         else
             module=${module//-/_} # replace any dashes with underscore
             insmod /kmod/${KVER}/${module}
+            echo "Kernel module loaded"
         fi
     done
 }
@@ -79,8 +80,9 @@ fix_paths() {
 }
 
 main () {
-    trap "{ echo Unloading ${KMOD_NAMES} ; unload_kmods ; }" SIGINT SIGTERM
+    trap "{ echo Unloading ${KMOD_NAMES} ; unload_kmods ; }" SIGINT SIGTERM SIGKILL
     load_kmods
+    echo "Going for an infinite nap... my job is done"
     sleep infinity
 }
 
