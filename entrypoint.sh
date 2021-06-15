@@ -79,7 +79,6 @@ fix_paths() {
 }
 
 main () {
-    fix_paths
     trap "{ echo Unloading ${KMOD_NAMES} ; unload_kmods ; }" SIGINT SIGTERM
     load_kmods
     sleep infinity
