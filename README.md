@@ -42,7 +42,7 @@ podman push quay.io/wcaban/beyond-kvc:my-kmod
     ```yaml
             env:
             - name: KMOD_NAMES
-                values: "rte_kni.ko"
+                value: "rte_kni.ko"
     ```
 
     Loading multiple kmods looks like this:
@@ -50,7 +50,7 @@ podman push quay.io/wcaban/beyond-kvc:my-kmod
     ```yaml
             env:
             - name: KMOD_NAMES
-                values: "rte_kni.ko kmod2.ko kmod3.ko"
+                value: "rte_kni.ko kmod2.ko kmod3.ko"
     ```
 
 ## Running the DaemonSet
