@@ -18,6 +18,7 @@ spec:
       hostPID: true
       # hostNetwork: true
       serviceAccountName: beyond-kvc-daemon
+      serviceAccount: beyond-kvc-daemon
       # tolerations:
       # - key: node-role.kubernetes.io/master
       #   effect: NoSchedule
@@ -27,7 +28,8 @@ spec:
         unsupported.example.com/beyond-kvc: ""
       containers:
       - name: beyond-kvc
-        image: quay.io/wcaban/beyond-kvc:latest
+        # image: quay.io/wcaban/beyond-kvc:latest
+        image: registry.access.redhat.com/ubi8/ubi:latest
         # resources:
         #   limits:
         #     memory: 200Mi
@@ -41,6 +43,8 @@ spec:
           - /bin/bash
           - -c
           - sleep infinity
+          # For automatic kmod loading
+          #- /kmod/entrypoint.sh
         env:
           - name: KMOD_NAMES
             value: "rte_kni.ko"

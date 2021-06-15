@@ -10,9 +10,9 @@ RUN dnf update -y \
 
 #
 ARG KVER
+ENV KVER=${KVER}
 ARG KMODTGZ=http://bastion8.shift.zone:8080/kmod.tgz
 ADD ${KMODTGZ} ./${KVER}/
-# RUN tar xzf ./kmod.tgz --strip-components=1 
 
 ADD entrypoint.sh /kmod/
 RUN chmod +x /kmod/entrypoint.sh
