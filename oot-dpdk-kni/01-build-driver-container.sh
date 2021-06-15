@@ -50,7 +50,11 @@ kernels_from_machine_os_content () {
 }
 
 get_driver () {
-    curl -L -o ${FILES_DIR}/driver/dpdk.tar.xz http://fast.dpdk.org/rel/dpdk-${DPDK_VERSION}.tar.xz
+    if [[ ! -f ${FILES_DIR}/driver/dpdk.tar.xz ]]; then
+        curl -L -o ${FILES_DIR}/driver/dpdk.tar.xz http://fast.dpdk.org/rel/dpdk-${DPDK_VERSION}.tar.xz
+    else
+        echo "Driver already in directory"
+    fi
 }
 
 build-container-driver() {
@@ -76,8 +80,8 @@ create-ds-yaml() {
 
 main () {
     kernels_from_machine_os_content
-    # get_driver
-    # build-container-driver
+    get_driver
+    build-container-driver
     # push-container-driver
 }
 
