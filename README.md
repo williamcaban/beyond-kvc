@@ -55,5 +55,5 @@ podman push quay.io/wcaban/beyond-kvc:my-kmod
 
 ## Running the DaemonSet
 
-- Label nodes where the DS should run `oc label node worker-0 unsupported.example.com/beyond-kvc=""`
+- Label nodes where the DS should run `oc label node ran-du unsupported.example.com/beyond-kvc=""`
 - Deploy DaemonSet `oc create -f 01-beyond-kvc-ds.yaml`
