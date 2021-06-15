@@ -80,10 +80,10 @@ fix_paths() {
 }
 
 main () {
-    trap "{ echo Unloading ${KMOD_NAMES} ; unload_kmods ; }" SIGINT SIGTERM SIGKILL
+    trap "{ echo Unloading ${KMOD_NAMES} ; unload_kmods ; }" SIGINT SIGTERM SIGKILL EXIT
     load_kmods
     echo "Going for an infinite nap... my job is done"
-    sleep infinity
+    sleep infinity 
 }
 
 main
