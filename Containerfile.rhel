@@ -9,6 +9,7 @@ RUN dnf update -y \
     && rm -fr /var/log/*
 
 #
+ARG KVER
 ARG KMODTGZ=http://bastion8.shift.zone:8080/kmod.tgz
 ADD ${KMODTGZ} ./${KVER}/kmod.tgz
 # RUN tar xzf ./kmod.tgz --strip-components=1 

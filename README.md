@@ -23,7 +23,7 @@ tar czf kmod.tgz /kmod
 ARG KMODTGZ=http://bastion8.shift.zone:8080/kmod.tgz
 
 # Build the container and upload to registry accessible by the platform
-podman build -t quay.io/wcaban/beyond-kvc:my-kmod -f Containerfile.rhel
+podman build --build-arg=KVER=${KVER} -t quay.io/wcaban/beyond-kvc:my-kmod -f Containerfile.rhel
 podman push quay.io/wcaban/beyond-kvc:my-kmod
 ```
 
