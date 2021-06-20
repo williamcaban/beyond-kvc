@@ -12,18 +12,31 @@ KMOD=name-of-kmod.ko
 /kmod/${KVER}/${KMOD}
 ```
 
-Copy all the kmods intended to be loaded with the DS to `/kmod/${KVER}/`
+- Copy all the kmods intended to be loaded and their corresponding `.conf` file for any partameters to `/kmod/${KVER}/`
+- There are several ways to pass the kmods `.ko` during build:
 
 ```bash
-# Create tgz containing the kmods and structure
-tar czf kmod.tgz /kmod
+# Path to the actual .ko
+--build-arg=KMODKO=./path/my_kmod.ko
+# Path to tgz containing the .ko's to load and their corresponding .config
+--build-arg=KMODKO=./path/my_kmod.tgz
+# Web server withtgz containing the .ko's to load and their corresponding .config
+--build-arg=KMODKO=http://example.com/path/to/my_kmod.tgz
+```
 
-# Put the tgz on a webserver accessible by the build process
-# and update Cotnainerfile.rhel to point to it
-ARG KMODTGZ=http://bastion8.shift.zone:8080/kmod.tgz
+```bash
+# Example with my_kmod.tgz containing .ko and .conf
+my_kmod.tgz
+    +-- my_kmod.ko
+    +-- my_kmod.conf
 
 # Build the container and upload to registry accessible by the platform
-podman build --build-arg=KVER=${KVER} -t quay.io/wcaban/beyond-kvc:my-kmod -f Containerfile.rhel
+podman build \
+  --build-arg=KVER=${KVER} \
+  --build-arg=KMODKO=http://example.com/path/to/my_kmod.tgz \
+  -t quay.io/wcaban/beyond-kvc:${OCP_RELEASE} \
+  -f Containerfile.rhel
+
 podman push quay.io/wcaban/beyond-kvc:my-kmod
 ```
 
@@ -42,7 +55,7 @@ podman push quay.io/wcaban/beyond-kvc:my-kmod
     ```yaml
             env:
             - name: KMOD_NAMES
-                value: "rte_kni.ko"
+              value: "rte_kni.ko"
     ```
 
     Loading multiple kmods looks like this:
@@ -50,10 +63,18 @@ podman push quay.io/wcaban/beyond-kvc:my-kmod
     ```yaml
             env:
             - name: KMOD_NAMES
-                value: "rte_kni.ko kmod2.ko kmod3.ko"
+              value: "rte_kni.ko kmod2.ko kmod3.ko"
+    ```
+
+    Passing parameters to `modprobe`:
+
+    ```yaml
+            env:
+            - name: MPROBEPARAMS
+              value: "--force"
     ```
 
 ## Running the DaemonSet
 
-- Label nodes where the DS should run `oc label node ran-du unsupported.example.com/beyond-kvc=""`
+- Label nodes where the DS should run `oc label node worker-0 unsupported.example.com/beyond-kvc=""`
 - Deploy DaemonSet `oc create -f 01-beyond-kvc-ds.yaml`

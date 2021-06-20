@@ -44,21 +44,14 @@ spec:
           - -c
           - sleep infinity
           # For automatic kmod loading
-          #- /kmod/entrypoint.sh
+          #- /usr/local/bin/entrypoint.sh
         env:
+          # space sperated list of kmods to load
           - name: KMOD_NAMES
             value: "rte_kni.ko"
-        volumeMounts:
-        - name: host-slash
-          mountPath: /host
-          readOnly: true
       terminationGracePeriodSeconds: 30
       terminationMessagePath: /dev/termination-log
       terminationMessagePolicy: FallbackToLogsOnError
-      volumes:
-      - name: host-slash
-        hostPath:
-          path: /
     # updateStrategy:
     #   rollingUpdate:
     #     maxUnavailable: 1

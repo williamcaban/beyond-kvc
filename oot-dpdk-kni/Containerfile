@@ -20,6 +20,10 @@ RUN dnf install --disablerepo=* --enablerepo=ubi-8-appstream --enablerepo=ubi-8-
 COPY files/${KERNEL_DIR} ./files/${KERNEL_DIR}
 RUN rpm -Uvh --nodeps ./files/${KERNEL_DIR}/*.rpm 
 
+RUN export KERNEL_VERSION=$( ls ./files/${KERNEL_DIR}/kernel-*core-*.rpm | sed "s/.*kernel.*-core\-//g" | sed "s/\.rpm//g" )
+
+RUN export kernel-core-*.rpm | sed "s/kernel-core\-//g" | sed "s/\.rpm//g"
+
 ###########################################################
 # Build kmod
 WORKDIR /kmod-build
@@ -31,12 +35,10 @@ WORKDIR /kmod-build
 COPY ./files/driver/dpdk.tar.xz ./dpdk.tar.xz
 RUN tar xf ./dpdk.tar.xz --strip-components=1 
 
-
 # make config T=x86_64-native-linuxapp-gcc
 
 RUN meson build
 RUN ninja -C build
-
 
 ###########################################################
 # Build driver container
@@ -46,6 +48,14 @@ FROM registry.access.redhat.com/ubi8:latest
 # ENV KERNEL_VERSION=$KERNEL_VERSION
 
 RUN dnf install --disablerepo=* --enablerepo=ubi-8-baseos --setopt=install_weak_deps=False -y kmod
+RUN dnf update -y ; \
+    dnf install --disablerepo=* \
+    --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos \
+    --enablerepo=rhel-8-for-x86_64-baseos-rpms -y  \
+    --setopt=install_weak_deps=False \
+    kmod \
+    && rm -rf /var/cache/dnf \
+    && rm -fr /var/log/*
 
 COPY --from=builder /kmod-build/build/kernel/linux/ /kmod/
 COPY files/scripts/entrypoint.sh /usr/local/bin/

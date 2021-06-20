@@ -1,24 +1,38 @@
-# podman build -t quay.io/wcaban/beyond-kvc:latest -f Containerfile.rhel
+# podman build \
+#     --build-arg=KVER=${KVER} \
+#     --build-arg=KMODKO=http://example.com/path/to/my_kmod.tgz \
+#     -t quay.io/wcaban/beyond-kvc:${OCP_RELEASE} \
+#     -f Containerfile.rhel
+# Options:
+#   --build-arg=KMODKO=./path/my_kmod.ko
+#   --build-arg=KMODKO=./path/my_kmod.tgz
+#   --build-arg=KMODKO=http://example.com/path/to/my_kmod.tgz
+
 FROM registry.access.redhat.com/ubi8/ubi:latest
 # Set work dir to build dir
 WORKDIR /kmod/
 
-# First update the base container to latest versions of everything
-RUN dnf update -y \
+# Update the base container to latest versions and install "kmod" package
+RUN dnf update -y ; \
+    dnf install --disablerepo=* \
+    --enablerepo=ubi-8-appstream --enablerepo=ubi-8-baseos \
+    --enablerepo=rhel-8-for-x86_64-baseos-rpms -y  \
+    --setopt=install_weak_deps=False \
+    kmod \
     && rm -rf /var/cache/dnf \
     && rm -fr /var/log/*
 
-#
 ARG KVER
 ENV KVER=${KVER}
-ARG KMODTGZ=http://bastion8.shift.zone:8080/kmod.tgz
-ADD ${KMODTGZ} ./${KVER}/
+ARG KMODKO=./files/driver
+ADD ${KMODKO} ./${KVER}/
 
-ADD entrypoint.sh /kmod/
-RUN chmod +x /kmod/entrypoint.sh
+ADD entrypoint.sh  /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 LABEL   io.k8s.display-name="Beyond kvc" \
         io.k8s.description="Container with OOT kmods" \
         io.openshift.tags="unsupported,kmod"
 
+# K8s Entrypoint "/usr/local/bin/entrypoint.sh"
 ENTRYPOINT /bin/bash -c "sleep infinity"

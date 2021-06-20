@@ -24,8 +24,7 @@ kernels_from_machine_os_content () {
     echo "Running with container ID ${OS_CONTAINER}"
 
     echo "Retrieving kernel-rt rpms"
-    RT_CORE=$(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-rt -iname "kernel-rt-core*")
-    [[ $RT_CORE =~ (kernel-rt-core-)(.*)(\.rpm) ]] && export KERNEL_VERSION=${BASH_REMATCH[2]}
+    RT_CORE= $(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-rt -iname "kernel-rt-core*")
     RT_DEVEL=$(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-rt -iname "kernel-rt-devel*")
     echo ${RT_CORE}
     echo ${RT_DEVEL}
@@ -36,8 +35,7 @@ kernels_from_machine_os_content () {
     if [[ ! $? -eq 0 ]]; then echo "Error copying files from container"; exit 1; fi
 
     echo "Retrieving kernel (regular) rpms"
-    KBASE_CORE=$(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-devel -iname "kernel-core-*")
-    [[ $KBASE_CORE =~ (kernel-core-)(.*)(\.rpm) ]] && export KERNEL_VERSION=${BASH_REMATCH[2]}
+    KBASE_CORE= $(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-devel -iname "kernel-core-*")
     KBASE_DEVEL=$(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-devel -iname "kernel-devel-*")
     echo ${KBASE_CORE}
     echo ${KBASE_DEVEL}
@@ -63,15 +61,15 @@ build-container-driver() {
         --build-arg=KERNEL_DIR=kernel \
         --build-arg=OCP_RELEASE=${OCP_RELEASE} -f Containerfile
 
-	podman build -t $(IMAGE):$(OCP_RELEASE)-rt \
-        --build-arg=DPDK_VERSION=$(DPDK_VERSION) \
+	podman build -t ${IMAGE}:${OCP_RELEASE}-rt \
+        --build-arg=DPDK_VERSION=${DPDK_VERSION} \
         --build-arg=KERNEL_DIR=kernel-rt \
-        --build-arg=OCP_RELEASE=$(OCP_RELEASE) -f Containerfile
+        --build-arg=OCP_RELEASE=${OCP_RELEASE} -f Containerfile
 }
 
 push-container-driver() {
-    podman push $(IMAGE):$(OCP_RELEASE)
-	podman push $(IMAGE):$(OCP_RELEASE)-rt
+    podman push ${IMAGE}:${OCP_RELEASE}
+	podman push ${IMAGE}:${OCP_RELEASE}-rt
 }
 
 create-ds-yaml() {
@@ -82,7 +80,7 @@ main () {
     kernels_from_machine_os_content
     get_driver
     build-container-driver
-    # push-container-driver
+    push-container-driver
 }
 
 main

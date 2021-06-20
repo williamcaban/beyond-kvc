@@ -1,27 +1,6 @@
 #!/bin/bash
-# NOTE: Some functions base on work from kmods-via-containers
-
-# The MIT License
-
-# Copyright (c) 2019 Dusty Mabe
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# NOTE: Originally some ideas were base on work from kmods-via-containers
+# then they were re-written.
 
 set -eu
 
@@ -29,32 +8,36 @@ set -eu
 export PATH=$PATH:/host/usr/local/sbin:/host/usr/local/bin:/host/usr/sbin:/host/usr/bin:/host/sbin:/host/bin
 
 # - KVER
-#   - The kernel version we are targeting
+#   - The kernel version of where the script is running
 KVER=`uname -r`
 
 # - KMOD_NAMES
 #   - A space separated list kernel module names that are part of the
 #     module software bundle and are to be checked/loaded/unloaded
-KMOD_NAMES=${KMOD_NAMES:-"simple-kmod simple-procfs-kmod"}
+KMOD_NAMES=${KMOD_NAMES:-"my_kmod1 my_kmod2"}
+
+# - MPROBEPARAMS
+#   - modprobe params to pass while loading kmod
+#   MPROBEPARAMS="--force"
+MPROBEPARAMS=${MPROBEPARAMS:""}
 
 is_kmod_loaded() {
-    module=${1//-/_} # replace any dashes with underscore
-    if lsmod | grep "${module}" &>/dev/null; then
-        return 0
-    else
+    match_module=$(lsmod | grep ${module} | cut -f1 -d' ')
+    if [[ "${module}" = "${match_module}" ]]; then
         return 1
+    else
+        return 0
     fi
 }
 
 load_kmods() {
-    echo "Loading kernel modules using the kernel module container..."
+    echo "Loading kernel modules..."
     for module in ${KMOD_NAMES}; do
-        if is_kmod_loaded ${module}; then
-            echo "Kernel module ${module} already loaded"
+        moprobe ${MPROBEPARAMS} ${module}
+        if $?; then
+            echo "Error loading Kernel module ${module} "
         else
-            module=${module//-/_} # replace any dashes with underscore
-            insmod /kmod/${KVER}/${module}
-            echo "Kernel module loaded"
+            echo "Kernel module ${module} loaded"
         fi
     done
 }
@@ -62,28 +45,36 @@ load_kmods() {
 unload_kmods() {
     echo "Unloading kernel modules..."
     for module in ${KMOD_NAMES}; do
-        if is_kmod_loaded ${module}; then
-            module=${module//-/_} # replace any dashes with underscore
-            rmmod "${module}"
+        echo "Unloading ${module}"
+        modprobe -r ${module}
+        if $?; then
+            echo "Error unloading Kernel module ${module} "
         else
-            echo "Kernel module ${module} already unloaded"
+            echo "Kernel module ${module} unloaded"
         fi
     done
 }
 
-fix_paths() {
-    echo "Creating symlinks for path assumed by '/usr/sbin/weak-modules'"
-    ln -s /host/usr/bin/dracut /usr/bin/dracut
-    ln -s /host/sbin/modinfo /sbin/modinfo
-    ln -s /host/usr/sbin/depmod /usr/sbin/depmod
-    ln -s /host/lib/modules/${KVER} /lib/modules/${KVER}
+create_kmod_symlinks() {
+    echo "Creating symlinnks for kernel modules..."
+    KMODEXTRA="/lib/modules/${KVER}/extra"
+    mkdir -pv ${KMODEXTRA}
+
+    # link for kmods to work with modprobe
+    ln -s /kmod/${KVER}/*.ko ${KMODEXTRA}
+    # modprobe kmod config params
+    ln -s /kmod/*.conf /etc/modprobe.d/
+
+    # Fenerate modules.dep and map files
+    depmod 
 }
 
 main () {
+    create_kmod_symlinks
     trap "{ echo Unloading ${KMOD_NAMES} ; unload_kmods ; }" SIGINT SIGTERM SIGKILL EXIT
     load_kmods
     echo "Going for an infinite nap... my job is done"
-    sleep infinity 
+    sleep infinity & wait
 }
 
 main
