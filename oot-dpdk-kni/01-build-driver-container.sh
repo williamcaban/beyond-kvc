@@ -61,7 +61,7 @@ build-container-driver() {
         --build-arg=KERNEL_DIR=kernel \
         --build-arg=OCP_RELEASE=${OCP_RELEASE} -f Containerfile
 
-	podman build -t ${IMAGE}:${OCP_RELEASE}-rt \
+	podman build -t "${IMAGE}:${OCP_RELEASE}-rt" \
         --build-arg=DPDK_VERSION=${DPDK_VERSION} \
         --build-arg=KERNEL_DIR=kernel-rt \
         --build-arg=OCP_RELEASE=${OCP_RELEASE} -f Containerfile
@@ -69,7 +69,7 @@ build-container-driver() {
 
 push-container-driver() {
     podman push ${IMAGE}:${OCP_RELEASE}
-	podman push ${IMAGE}:${OCP_RELEASE}-rt
+	podman push "${IMAGE}:${OCP_RELEASE}-rt"
 }
 
 create-ds-yaml() {
