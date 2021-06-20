@@ -24,7 +24,7 @@ kernels_from_machine_os_content () {
     echo "Running with container ID ${OS_CONTAINER}"
 
     echo "Retrieving kernel-rt rpms"
-    RT_CORE= $(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-rt -iname "kernel-rt-core*")
+    RT_CORE=$( podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-rt -iname "kernel-rt-core*")
     RT_DEVEL=$(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-rt -iname "kernel-rt-devel*")
     echo "Kernel RT Core: ${RT_CORE}"
     echo "Kernel RT Devel: ${RT_DEVEL}"
@@ -35,7 +35,7 @@ kernels_from_machine_os_content () {
     if [[ ! $? -eq 0 ]]; then echo "Error copying files from container"; exit 1; fi
 
     echo "Retrieving kernel (regular) rpms"
-    KBASE_CORE= $(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-devel -iname "kernel-core-*")
+    KBASE_CORE=$( podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-devel -iname "kernel-core-*")
     KBASE_DEVEL=$(podman exec ${OS_CONTAINER} /usr/bin/find /extensions/kernel-devel -iname "kernel-devel-*")
     echo "Kernel Core: ${KBASE_CORE}"
     echo "Kernel Devel: ${KBASE_DEVEL}"
