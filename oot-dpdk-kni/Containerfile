@@ -10,11 +10,12 @@ ENV DPDK_VERSION=${DPDK_VERSION}
 ###########################################################
 # Install kernel for build environment
 COPY files/${KERNEL_DIR} ./files/${KERNEL_DIR}
-RUN rpm -Uvh --nodeps ./files/${KERNEL_DIR}/*.rpm 
 
 RUN export KERNEL_VERSION=$( ls ./files/${KERNEL_DIR}/kernel-*core-*.rpm | sed "s/.*kernel.*-core\-//g" | sed "s/\.rpm//g" ) \
     && echo ${RHEL_VERSION} > /etc/yum/vars/releasever \
     && yum config-manager --best --setopt=install_weak_deps=False --save
+
+RUN rpm -Uvh --nodeps ./files/${KERNEL_DIR}/*.rpm 
 
 ###########################################################
 # Prepare base build environment
